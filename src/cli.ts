@@ -136,7 +136,7 @@ function fixEnums(ast: any, root: protobuf.Root) {
 
 function fixEnumField(message: ScopedMessage, field: protobuf.Field) {
   // remove the initial dot
-  const fullType = field.resolvedType.fullName.substring(1);
+  const fullType = field.resolvedType!.fullName.substring(1);
   // enumType
   message.scope
     .find(jscodeshift.AssignmentExpression, {
