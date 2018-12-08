@@ -1,10 +1,11 @@
 import * as grpc from 'grpc';
 import { loadSync } from '@grpc/proto-loader';
 import { Observable } from 'rxjs';
+import * as $protobuf from 'protobufjs';
 
 import { lookupPackage } from './utils';
 
-export { grpc };
+export { grpc, Observable, $protobuf };
 
 type DynamicMethods = { [name: string]: any };
 
