@@ -191,7 +191,7 @@ function transformTypeScriptSource(source: string) {
   }
 
   // tslint disable
-  source = `// tslint:disable:interface-name\n${source}`;
+  source = `// tslint:disable:interface-name\n// tslint:disable:no-shadowed-variable\n${source}`;
 
   // Fix generic type syntax
   source = source.replace(/Observable\.</g, 'Observable<');
