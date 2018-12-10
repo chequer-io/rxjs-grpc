@@ -190,6 +190,9 @@ function transformTypeScriptSource(source: string) {
     source = `import { Observable } from 'rxjs-grpc';\n${source}`;
   }
 
+  // tslint disable
+  source = `// tslint:disable:interface-name\n${source}`;
+
   // Fix generic type syntax
   source = source.replace(/Observable\.</g, 'Observable<');
   // Export interfaces, enums and namespaces
