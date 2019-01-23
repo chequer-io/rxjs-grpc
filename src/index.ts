@@ -37,7 +37,7 @@ export function serverBuilder<T>(
   const packageDefinition = loadSync(protoPath, {
     keepCase: true,
     longs: String,
-    enums: String,
+    // enums: String,
     defaults: true,
     oneofs: true,
     includeDirs,
@@ -133,7 +133,7 @@ export function clientFactory<T>(
   const packageDefinition = loadSync(protoPath, {
     keepCase: true,
     longs: String,
-    enums: String,
+    // enums: String,
     defaults: true,
     oneofs: true,
     includeDirs,
