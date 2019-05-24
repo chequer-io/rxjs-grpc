@@ -190,8 +190,7 @@ function transformTypeScriptSource(source: string) {
     source = `import { Observable } from 'rxjs-grpc';\n${source}`;
   }
 
-  // tslint disable
-  source = `// tslint:disable:interface-name\n// tslint:disable:no-shadowed-variable\n${source}`;
+  source = `/* eslint-disable */\n${source}`;
 
   // Fix generic type syntax
   source = source.replace(/Observable\.</g, 'Observable<');
