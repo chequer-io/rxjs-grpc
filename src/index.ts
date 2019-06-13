@@ -1,13 +1,15 @@
+/* eslint-disable @typescript-eslint/no-angle-bracket-type-assertion */
 import * as grpc from 'grpc';
 import { loadSync } from '@grpc/proto-loader';
-import { Observable } from 'rxjs';
-import * as $protobuf from 'protobufjs';
+import { Observable } from 'rxjs/Observable';
 
 import { lookupPackage } from './utils';
 
-export { grpc, Observable, $protobuf };
+export { grpc, Observable };
 
-type DynamicMethods = { [name: string]: any };
+interface DynamicMethods {
+  [name: string]: any;
+}
 
 export interface GenericServerBuilder<T> {
   start(address: string, credentials?: any): void;

@@ -8,9 +8,8 @@ import { promisify } from 'bluebird';
 
 const jscodeshift = require('jscodeshift');
 
-type Callable = (args: string[]) => Promise<any>;
-const pbjsMain = (promisify(pbjs.main) as any) as Callable;
-const pbtsMain = (promisify(pbts.main) as any) as Callable;
+const pbjsMain = promisify(pbjs.main);
+const pbtsMain = promisify(pbts.main);
 
 const createTempDir = promisify(
   (callback: (error: any, result: tmp.SynchrounousResult) => any) => {
@@ -24,9 +23,6 @@ type NamedReference = {
   reference: string;
   name: string;
 };
-interface ScopedMessage extends NamedReference {
-  scope: any;
-}
 type Services = NamedReference[];
 
 export function bootstrap() {
@@ -125,8 +121,6 @@ function printUsage() {
 
 function transformJavaScriptSource(source: string, root: protobuf.Root) {
   const ast = jscodeshift(source);
-  // Fix fields with enum type
-  fixEnums(ast, root);
   // Change constructors to interfaces and remove their parameters
   constructorsToInterfaces(ast);
   // Clean method signatures
@@ -141,62 +135,15 @@ function transformJavaScriptSource(source: string, root: protobuf.Root) {
   return ast.toSource();
 }
 
-function fixEnums(ast: any, root: protobuf.Root) {
-  for (const message of collectMessages(ast)) {
-    const type = root.lookupType(message.reference);
-    for (const field of type.fieldsArray) {
-      const enumType = field.resolve().resolvedType;
-      if (enumType instanceof protobuf.Enum) {
-        fixEnumField(message, field);
-      }
-    }
-  }
-}
-
-function fixEnumField(message: ScopedMessage, field: protobuf.Field) {
-  // remove the initial dot
-  const fullType = field.resolvedType!.fullName.substring(1);
-  // enumType
-  message.scope
-    .find(jscodeshift.AssignmentExpression, {
-      left: {
-        type: 'MemberExpression',
-        object: {
-          type: 'MemberExpression',
-          property: {
-            name: 'prototype',
-          },
-        },
-        property: {
-          name: field.name,
-        },
-      },
-    })
-    .closest(jscodeshift.ExpressionStatement)
-    .filter((p: any) => p.node.comments)
-    .forEach((path: any) => {
-      path.node.comments.forEach((comment: any) => {
-        comment.value = (comment.value as string).replace(
-          /^([\s]*\*[\s]*@type[\s]+\{)number(\}|\|)/gm,
-          (_, prefix, postfix) => `${prefix}${fullType}${postfix}`,
-        );
-      });
-      jscodeshift(path).replaceWith(path.node);
-    });
-}
-
 function transformTypeScriptSource(source: string) {
   // Remove imports
   source = source.replace(/^import.*?$\n?/gm, '');
+  // Add our imports
+  source = `import { Observable } from 'rxjs-grpc';\n${source}`;
 
   if (source.includes('$protobuf')) {
-    source = `import { Observable, $protobuf } from 'rxjs-grpc';\n${source}`;
-  } else {
-    // Add our imports
-    source = `import { Observable } from 'rxjs-grpc';\n${source}`;
+    source = `import * as $protobuf from 'protobufjs';\n${source}`;
   }
-
-  source = `/* eslint-disable */\n${source}`;
 
   // Fix generic type syntax
   source = source.replace(/Observable\.</g, 'Observable<');
@@ -250,29 +197,9 @@ function collectServices(ast: any) {
   return services;
 }
 
-function collectMessages(ast: any): ScopedMessage[] {
-  const messages: ScopedMessage[] = [];
-  ast
-    .find(jscodeshift.FunctionDeclaration)
-    .filter((p: any) => p.node.comments)
-    // only message constructors have exactly 1 parameters
-    .filter((p: any) => p.node.params.length === 1)
-    .forEach((p: any) => {
-      const reference = getReference(p);
-      if (reference) {
-        messages.push({
-          reference,
-          name: p.node.id.name,
-          scope: jscodeshift(p.parent).closestScope(),
-        });
-      }
-    });
-  return messages;
-}
-
 function getReference(commentedNodePath: any): string | undefined {
   return (commentedNodePath.node.comments as any[])
-    .map(comment => /@exports\s+([^\s]+)/.exec(comment.value))
+    .map(comment => /@memberof\s+([^\s]+)/.exec(comment.value))
     .map(match => (match ? match[1] : undefined))
     .filter(match => match)[0];
 }
