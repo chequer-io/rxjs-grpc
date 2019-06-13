@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-angle-bracket-type-assertion */
+import * as protoLoader from '@grpc/proto-loader';
 import * as grpc from 'grpc';
 import { loadSync } from '@grpc/proto-loader';
 import { Observable } from 'rxjs';
@@ -36,16 +37,7 @@ export function serverBuilder<T>(
     },
   };
 
-  const packageDefinition = loadSync(protoPath, {
-    keepCase: true,
-    longs: String,
-    // enums: String,
-    defaults: true,
-    oneofs: true,
-    includeDirs,
-  });
-  const protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
-  const pkg = lookupPackage(protoDescriptor, packageName);
+  const pkg = lookupPackage(grpcLoad(protoPath, includeDirs), packageName);
   for (const name of getServiceNames(pkg)) {
     builder[`add${name}`] = function(rxImpl: DynamicMethods) {
       server.addService(pkg[name].service, createService(pkg[name], rxImpl));
@@ -54,6 +46,18 @@ export function serverBuilder<T>(
   }
 
   return builder as any;
+}
+
+function grpcLoad(protoPath: string, includeDirs?: string[]) {
+  const packageDefinition = protoLoader.loadSync(protoPath, {
+    keepCase: true,
+    longs: String,
+    // enums: String,
+    defaults: true,
+    oneofs: true,
+    includeDirs,
+  });
+  return grpc.loadPackageDefinition(packageDefinition);
 }
 
 function createService(Service: any, rxImpl: DynamicMethods) {
@@ -131,17 +135,7 @@ export function clientFactory<T>(
   }
 
   const prototype: DynamicMethods = Constructor.prototype;
-  // const pkg = lookupPackage(grpc.load(protoPath), packageName);
-  const packageDefinition = loadSync(protoPath, {
-    keepCase: true,
-    longs: String,
-    // enums: String,
-    defaults: true,
-    oneofs: true,
-    includeDirs,
-  });
-  const protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
-  const pkg = lookupPackage(protoDescriptor, packageName);
+  const pkg = lookupPackage(grpcLoad(protoPath, includeDirs), packageName);
   for (const name of getServiceNames(pkg)) {
     prototype[`get${name}`] = function(this: Constructor) {
       return createServiceClient(pkg[name], this.__args);
