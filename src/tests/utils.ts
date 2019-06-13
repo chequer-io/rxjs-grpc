@@ -37,7 +37,7 @@ function createCompilerHost(sources: Sources, options: ts.CompilerOptions): ts.C
     if (fileName in sources) {
       sourceText = sources[fileName];
     } else {
-      sourceText = ts.sys.readFile(fileName) || '';
+      sourceText = ts.sys.readFile(fileName)!;
     }
     return ts.createSourceFile(fileName, sourceText, version);
   };
@@ -64,8 +64,8 @@ function extractErrors(emitResult: ts.EmitResult, program: ts.Program) {
   const allDiagnostics = ts.getPreEmitDiagnostics(program).concat(emitResult.diagnostics);
   return allDiagnostics.map(diagnostic => {
     let prefix = '';
-    if (diagnostic.file && diagnostic.start) {
-      const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+    if (diagnostic.file) {
+      const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
       prefix = `${diagnostic.file.fileName} (${line + 1},${character + 1}): `;
     }
     const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
