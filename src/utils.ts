@@ -32,16 +32,19 @@ export function lookupPackage(root: GrpcObject, packageName: string) {
   return pkg;
 }
 
-export function protoLoad(protoPath: string) {
+export function protoLoad(protoPath: string, includeDirs?: string[]) {
   return protoLoader.loadSync(protoPath, {
     keepCase: true,
+    longs: String,
+    // enums: String,
     defaults: true,
     oneofs: true,
+    includeDirs,
   });
 }
 
-export function grpcLoad(protoPath: string) {
-  return loadPackageDefinition(protoLoad(protoPath));
+export function grpcLoad(protoPath: string, includeDirs?: string[]) {
+  return loadPackageDefinition(protoLoad(protoPath, includeDirs));
 }
 
 export function createService(
