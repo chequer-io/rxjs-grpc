@@ -122,11 +122,6 @@ function transformJavaScriptSource(source: string, root: protobuf.Root) {
 function transformTypeScriptSource(source: string) {
   // Remove imports
   source = source.replace(/^import.*?$\n?/gm, '');
-  // eslint
-  source = `/* eslint-disable */\n${source}`;
-  // tslint
-  source = `/* tslint:disable */\n${source}`;
-
   // Add our imports
   source = `import { Observable } from 'rxjs';\n${source}`;
   source = `import * as grpc from 'grpc';\n${source}`;
@@ -134,6 +129,11 @@ function transformTypeScriptSource(source: string) {
   if (source.includes('$protobuf')) {
     source = `import * as $protobuf from 'protobufjs';\n${source}`;
   }
+
+  // tslint
+  source = `/* tslint:disable */\n${source}`;
+  // eslint
+  source = `/* eslint-disable */\n${source}`;
 
   // Fix generic type syntax
   source = source.replace(/Observable\.</g, 'Observable<');
