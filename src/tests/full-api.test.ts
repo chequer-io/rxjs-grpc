@@ -1,8 +1,8 @@
 import * as cli from '../cli';
+
 import { compileInMemory } from './utils';
 
 describe('full api test', () => {
-
   let namespaces: string;
 
   beforeAll(async () => {
@@ -23,7 +23,7 @@ describe('full api test', () => {
         message Reply {
           string reply_field = 1;
         }
-      `
+      `,
     ]);
   });
 
@@ -55,7 +55,7 @@ describe('full api test', () => {
         });
 
         server.start('0.0.0.0:1234');
-      `
+      `,
     });
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);
@@ -81,10 +81,9 @@ describe('full api test', () => {
         Service.streaming({ request_field: 'string' }).forEach(response => {
           console.log(response.reply_field);
         });
-      `
+      `,
     });
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);
   });
-
 });

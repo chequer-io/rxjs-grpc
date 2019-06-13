@@ -1,8 +1,8 @@
 import * as cli from '../cli';
+
 import { compileInMemory } from './utils';
 
 describe('enums test', () => {
-
   let namespaces: string;
 
   beforeAll(async () => {
@@ -19,7 +19,7 @@ describe('enums test', () => {
           ONE = 1;
           TWO = 2;
         }
-      `
+      `,
     ]);
   });
 
@@ -32,7 +32,7 @@ describe('enums test', () => {
         console.log(test.EnumType);
         let value: test.EnumType = test.EnumType.ONE;
         value = test.EnumType.TWO;
-      `
+      `,
     });
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);
@@ -47,7 +47,7 @@ describe('enums test', () => {
         const message: test.Message = {
           field: test.EnumType.ONE
         };
-      `
+      `,
     });
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);
@@ -61,7 +61,7 @@ describe('enums test', () => {
 
         const message: test.Message = {};
         console.log(message.field === test.EnumType.ONE);
-      `
+      `,
     });
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);
@@ -75,7 +75,7 @@ describe('enums test', () => {
 
         const message: test.Message = {};
         const enumVar: test.EnumType = message.field;
-      `
+      `,
     });
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);
@@ -94,10 +94,9 @@ describe('enums test', () => {
 
         const message: test.Message = {};
         message.field = OtherEnumType.ONE;
-      `
+      `,
     });
     expect(result.errors.length).toBeGreaterThan(0);
     expect(result.ok).toBe(false);
   });
-
 });

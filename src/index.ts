@@ -142,7 +142,7 @@ export function clientFactory<T>(
     };
   }
 
-  return (<any>Constructor) as ClientFactoryConstructor<T>;
+  return (Constructor as any) as ClientFactoryConstructor<T>;
 }
 
 function getServiceNames(pkg: any) {
