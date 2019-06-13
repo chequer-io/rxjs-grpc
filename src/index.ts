@@ -30,10 +30,7 @@ export function serverBuilder<T>(
 ): T & GenericServerBuilder<T> {
   const builder: DynamicMethods = <GenericServerBuilder<T>>{
     start(address, credentials) {
-      server.bind(
-        address,
-        credentials || grpc.ServerCredentials.createInsecure(),
-      );
+      server.bind(address, credentials || grpc.ServerCredentials.createInsecure());
       server.start();
     },
     forceShutdown() {
@@ -45,10 +42,7 @@ export function serverBuilder<T>(
   for (const name of getServiceNames(pkg)) {
     builder[`add${name}`] = function(rxImpl: DynamicMethods) {
       const serviceData = (pkg[name] as any) as GrpcService<any>;
-      server.addService(
-        serviceData.service,
-        createService(serviceData, rxImpl),
-      );
+      server.addService(serviceData.service, createService(serviceData, rxImpl));
       return this;
     };
   }
@@ -56,23 +50,11 @@ export function serverBuilder<T>(
   return builder as any;
 }
 
-export function clientFactory<T>(
-  protoPath: string,
-  packageName: string,
-  includeDirs?: string[],
-) {
+export function clientFactory<T>(protoPath: string, packageName: string, includeDirs?: string[]) {
   class Constructor {
     readonly __args: [string, grpc.ChannelCredentials, any | undefined];
-    constructor(
-      address: string,
-      credentials?: grpc.ChannelCredentials,
-      options: any = undefined,
-    ) {
-      this.__args = [
-        address,
-        credentials || grpc.credentials.createInsecure(),
-        options,
-      ];
+    constructor(address: string, credentials?: grpc.ChannelCredentials, options: any = undefined) {
+      this.__args = [address, credentials || grpc.credentials.createInsecure(), options];
     }
   }
 
@@ -80,10 +62,7 @@ export function clientFactory<T>(
   const pkg = lookupPackage(grpcLoad(protoPath, includeDirs), packageName);
   for (const name of getServiceNames(pkg)) {
     prototype[`get${name}`] = function(this: Constructor) {
-      return createServiceClient(
-        (pkg[name] as any) as GrpcService<any>,
-        this.__args,
-      );
+      return createServiceClient((pkg[name] as any) as GrpcService<any>, this.__args);
     };
   }
 

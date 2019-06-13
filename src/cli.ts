@@ -12,13 +12,11 @@ import * as tmp from 'tmp';
 const pbjsMain = promisify(pbjs.main);
 const pbtsMain = promisify(pbts.main);
 
-const createTempDir = promisify(
-  (callback: (error: any, result: tmp.SynchrounousResult) => any) => {
-    tmp.dir({ unsafeCleanup: true }, (error, name, removeCallback) => {
-      callback(error, { name, removeCallback, fd: -1 });
-    });
-  },
-);
+const createTempDir = promisify((callback: (error: any, result: tmp.SynchrounousResult) => any) => {
+  tmp.dir({ unsafeCleanup: true }, (error, name, removeCallback) => {
+    callback(error, { name, removeCallback, fd: -1 });
+  });
+});
 
 type NamedReference = {
   reference: string;
@@ -61,34 +59,17 @@ export async function buildTypeScript(protoFiles: string[]) {
   const tempDir = await createTempDir();
   try {
     // Use pbjs to generate static JS code for the protobuf definitions
-    const jsFile = await call(
-      tempDir.name,
-      pbjsMain,
-      protoFiles,
-      'js',
-      ['keep-case'],
-      {
-        target: 'static-module',
-        wrap: 'commonjs',
-      },
-    );
+    const jsFile = await call(tempDir.name, pbjsMain, protoFiles, 'js', ['keep-case'], {
+      target: 'static-module',
+      wrap: 'commonjs',
+    });
 
-    const jsonDescriptor = await call(
-      tempDir.name,
-      pbjsMain,
-      protoFiles,
-      'js',
-      ['keep-case'],
-      {
-        target: 'json',
-      },
-    );
+    const jsonDescriptor = await call(tempDir.name, pbjsMain, protoFiles, 'js', ['keep-case'], {
+      target: 'json',
+    });
     const root = protobuf.loadSync(jsonDescriptor);
 
-    const js = transformJavaScriptSource(
-      await fs.readFile(jsFile, 'utf8'),
-      root,
-    );
+    const js = transformJavaScriptSource(await fs.readFile(jsFile, 'utf8'), root);
     await fs.writeFile(jsFile, js);
 
     // Create TypeScript file
@@ -159,19 +140,14 @@ function transformTypeScriptSource(source: string) {
   // Remove public keyword from the field, because they are not allowed in interface
   source = source.replace(/^(\s+)public\s+/gm, '$1');
   // Export interfaces, enums and namespaces
-  source = source.replace(
-    /^(\s+)(interface|enum|namespace)(\s+)/gm,
-    '$1export $2$3',
-  );
+  source = source.replace(/^(\s+)(interface|enum|namespace)(\s+)/gm, '$1export $2$3');
   return source;
 }
 
 function addFactoryAndBuild(ast: Collection<ASTNode>) {
   const services = collectServices(ast);
 
-  const declaration = getNamespaceDeclarations(ast).filter(
-    (path, index) => index === 0,
-  );
+  const declaration = getNamespaceDeclarations(ast).filter((path, index) => index === 0);
   const namespace = getNamepaceName(declaration);
 
   const ownServices = services
@@ -181,12 +157,8 @@ function addFactoryAndBuild(ast: Collection<ASTNode>) {
       return !relative.includes('.');
     });
 
-  declaration.insertBefore(
-    sourceToNodes(buildClientFactorySource(namespace, ownServices)),
-  );
-  declaration.insertBefore(
-    sourceToNodes(buildServerBuilderSource(namespace, ownServices)),
-  );
+  declaration.insertBefore(sourceToNodes(buildClientFactorySource(namespace, ownServices)));
+  declaration.insertBefore(sourceToNodes(buildServerBuilderSource(namespace, ownServices)));
 }
 
 function collectServices(ast: Collection<ASTNode>) {
@@ -206,9 +178,7 @@ function collectServices(ast: Collection<ASTNode>) {
   return services;
 }
 
-function getReference(
-  commentedNodePath: ASTPath<jscodeshift.FunctionDeclaration>,
-) {
+function getReference(commentedNodePath: ASTPath<jscodeshift.FunctionDeclaration>) {
   if (!commentedNodePath.node.comments) {
     return;
   }
@@ -230,14 +200,8 @@ function constructorsToInterfaces(ast: Collection<ASTNode>) {
       // Message type has an @interface declaration
       path.node.comments = interfaceComments;
       path.node.comments.forEach(comment => {
-        comment.value = comment.value.replace(
-          /^([\s\*]+@interface\s+)I/gm,
-          '$1',
-        );
-        comment.value = comment.value.replace(
-          /^([\s\*]+@property\s+\{.*?\.)I([^.]+\})/gm,
-          '$1$2',
-        );
+        comment.value = comment.value.replace(/^([\s\*]+@interface\s+)I/gm, '$1');
+        comment.value = comment.value.replace(/^([\s\*]+@property\s+\{.*?\.)I([^.]+\})/gm, '$1$2');
       });
     } else {
       // Otherwise this is a service
@@ -289,9 +253,7 @@ function cleanMethodSignatures(ast: Collection<ASTNode>) {
   ast.find(jscodeshift.ReturnStatement).forEach(fixPromiseMethodSignature);
 
   function fixPromiseMethodSignature(
-    path: ASTPath<
-      jscodeshift.ExpressionStatement | jscodeshift.ReturnStatement
-    >,
+    path: ASTPath<jscodeshift.ExpressionStatement | jscodeshift.ReturnStatement>,
   ) {
     if (!path.node.comments) {
       return;
@@ -301,14 +263,8 @@ function cleanMethodSignatures(ast: Collection<ASTNode>) {
       const returnsPromiseRe = /(@returns\s+\{)Promise(<)/g;
       if (returnsPromiseRe.test(comment.value)) {
         changed = true;
-        comment.value = comment.value.replace(
-          returnsPromiseRe,
-          '$1Observable$2',
-        );
-        comment.value = comment.value.replace(
-          /(@param\s+\{.*?\.)I([^.]+\})/g,
-          '$1$2',
-        );
+        comment.value = comment.value.replace(returnsPromiseRe, '$1Observable$2');
+        comment.value = comment.value.replace(/(@param\s+\{.*?\.)I([^.]+\})/g, '$1$2');
         // Add optional metadata parameter
         comment.value = comment.value.replace(
           /^([\s\*]+@param\s+)(\{.*)$/gm,
@@ -333,19 +289,14 @@ function removeMembers(ast: Collection<ASTNode>, root: protobuf.Root) {
       // as they are not part of the interfaces.
       if (/@member /.test(comment.value)) {
         let member;
-        comment.value.replace(
-          /@member\s+\{.*?\}\s+([^\s]+)/g,
-          (match, _member_) => {
-            member = _member_;
-            return match;
-          },
-        );
+        comment.value.replace(/@member\s+\{.*?\}\s+([^\s]+)/g, (match, _member_) => {
+          member = _member_;
+          return match;
+        });
 
         let oneofNames: string[] = [];
         comment.value.replace(/@memberof\s+([^\s]+)/g, (match, memberOf) => {
-          oneofNames = root
-            .lookupType(memberOf)
-            .oneofsArray.map(oneof => oneof.name);
+          oneofNames = root.lookupType(memberOf).oneofsArray.map(oneof => oneof.name);
           return match;
         });
 
@@ -387,9 +338,7 @@ function buildClientFactorySource(namespace: string, services: Services) {
   `;
 }
 
-function getNamepaceName(
-  declarations: Collection<jscodeshift.VariableDeclaration>,
-) {
+function getNamepaceName(declarations: Collection<jscodeshift.VariableDeclaration>) {
   let namespaceName = '';
   const node = declarations.paths()[0].node;
   if (!node.comments) {

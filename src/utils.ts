@@ -47,10 +47,7 @@ export function grpcLoad(protoPath: string, includeDirs?: string[]) {
   return loadPackageDefinition(protoLoad(protoPath, includeDirs));
 }
 
-export function createService(
-  Service: GrpcService<any>,
-  rxImpl: DynamicMethods,
-) {
+export function createService(Service: GrpcService<any>, rxImpl: DynamicMethods) {
   const service: DynamicMethods = {};
   for (const name in Service.prototype) {
     if (typeof rxImpl[name] === 'function') {
@@ -60,30 +57,17 @@ export function createService(
   return service;
 }
 
-function createMethod(
-  rxImpl: DynamicMethods,
-  name: string,
-  serviceMethods: DynamicMethods,
-) {
+function createMethod(rxImpl: DynamicMethods, name: string, serviceMethods: DynamicMethods) {
   return serviceMethods[name].responseStream
     ? createStreamingMethod(rxImpl, name)
     : createUnaryMethod(rxImpl, name);
 }
 
-function createUnaryMethod(
-  rxImpl: DynamicMethods,
-  name: string,
-): handleUnaryCall<any, any> {
+function createUnaryMethod(rxImpl: DynamicMethods, name: string): handleUnaryCall<any, any> {
   return function(call, callback) {
     try {
-      const response: Observable<any> = rxImpl[name](
-        call.request,
-        call.metadata,
-      );
-      response.subscribe(
-        data => callback(null, data),
-        error => callback(error, null),
-      );
+      const response: Observable<any> = rxImpl[name](call.request, call.metadata);
+      response.subscribe(data => callback(null, data), error => callback(error, null));
     } catch (error) {
       callback(error, null);
     }
@@ -96,10 +80,7 @@ function createStreamingMethod(
 ): handleServerStreamingCall<any, any> {
   return async function(call) {
     try {
-      const response: Observable<any> = rxImpl[name](
-        call.request,
-        call.metadata,
-      );
+      const response: Observable<any> = rxImpl[name](call.request, call.metadata);
       await response.forEach(data => call.write(data));
     } catch (error) {
       call.emit('error', error);
@@ -109,9 +90,7 @@ function createStreamingMethod(
 }
 
 export function getServiceNames(pkg: GrpcObject) {
-  return Object.keys(pkg).filter(
-    name => (pkg[name] as GrpcService<any>).service,
-  );
+  return Object.keys(pkg).filter(name => (pkg[name] as GrpcService<any>).service);
 }
 
 export function createServiceClient(
