@@ -1,31 +1,35 @@
 /* eslint-disable @typescript-eslint/no-angle-bracket-type-assertion */
 import * as protoLoader from '@grpc/proto-loader';
-import * as grpc from 'grpc';
 import { loadSync } from '@grpc/proto-loader';
 import { Observable } from 'rxjs';
+import * as grpc from 'grpc';
 
-import { lookupPackage } from './utils';
+import {
+  ClientFactoryConstructor,
+  createService,
+  createServiceClient,
+  DynamicMethods,
+  getServiceNames,
+  grpcLoad,
+  GrpcService,
+  lookupPackage,
+} from './utils';
 
-export { grpc, Observable };
-
-interface DynamicMethods {
-  [name: string]: any;
-}
+export { grpc, Observable, ClientFactoryConstructor };
 
 export interface GenericServerBuilder<T> {
-  start(address: string, credentials?: any): void;
+  start(address: string, credentials?: grpc.ServerCredentials): void;
   forceShutdown(): void;
 }
 
 export function serverBuilder<T>(
   protoPath: string,
   packageName: string,
+  server = new grpc.Server(),
   includeDirs?: string[],
 ): T & GenericServerBuilder<T> {
-  const server = new grpc.Server();
-
   const builder: DynamicMethods = <GenericServerBuilder<T>>{
-    start(address: string, credentials?: any) {
+    start(address, credentials) {
       server.bind(
         address,
         credentials || grpc.ServerCredentials.createInsecure(),
@@ -40,7 +44,11 @@ export function serverBuilder<T>(
   const pkg = lookupPackage(grpcLoad(protoPath, includeDirs), packageName);
   for (const name of getServiceNames(pkg)) {
     builder[`add${name}`] = function(rxImpl: DynamicMethods) {
-      server.addService(pkg[name].service, createService(pkg[name], rxImpl));
+      const serviceData = (pkg[name] as any) as GrpcService<any>;
+      server.addService(
+        serviceData.service,
+        createService(serviceData, rxImpl),
+      );
       return this;
     };
   }
@@ -48,84 +56,18 @@ export function serverBuilder<T>(
   return builder as any;
 }
 
-function grpcLoad(protoPath: string, includeDirs?: string[]) {
-  const packageDefinition = protoLoader.loadSync(protoPath, {
-    keepCase: true,
-    longs: String,
-    // enums: String,
-    defaults: true,
-    oneofs: true,
-    includeDirs,
-  });
-  return grpc.loadPackageDefinition(packageDefinition);
-}
-
-function createService(Service: any, rxImpl: DynamicMethods) {
-  const service: DynamicMethods = {};
-  for (const name in Service.prototype) {
-    if (typeof rxImpl[name] === 'function') {
-      service[name] = createMethod(rxImpl, name, Service.prototype);
-    }
-  }
-  return service;
-}
-
-function createMethod(
-  rxImpl: DynamicMethods,
-  name: string,
-  serviceMethods: DynamicMethods,
-) {
-  return serviceMethods[name].responseStream
-    ? createStreamingMethod(rxImpl, name)
-    : createUnaryMethod(rxImpl, name);
-}
-
-function createUnaryMethod(rxImpl: DynamicMethods, name: string) {
-  return function(call: any, callback: any) {
-    try {
-      const response: Observable<any> = rxImpl[name](
-        call.request,
-        call.metadata,
-      );
-      response.subscribe(
-        data => callback(null, data),
-        error => callback(error),
-      );
-    } catch (error) {
-      callback(error);
-    }
-  };
-}
-
-function createStreamingMethod(rxImpl: DynamicMethods, name: string) {
-  return async function(call: any) {
-    try {
-      const response: Observable<any> = rxImpl[name](
-        call.request,
-        call.metadata,
-      );
-      await response.forEach(data => call.write(data));
-    } catch (error) {
-      call.emit('error', error);
-    }
-    call.end();
-  };
-}
-
-export type ClientFactoryConstructor<T> = new (
-  address: string,
-  credentials?: any,
-  options?: any,
-) => T;
-
 export function clientFactory<T>(
   protoPath: string,
   packageName: string,
   includeDirs?: string[],
 ) {
   class Constructor {
-    readonly __args: any[];
-    constructor(address: string, credentials?: any, options: any = undefined) {
+    readonly __args: [string, grpc.ChannelCredentials, any | undefined];
+    constructor(
+      address: string,
+      credentials?: grpc.ChannelCredentials,
+      options: any = undefined,
+    ) {
       this.__args = [
         address,
         credentials || grpc.credentials.createInsecure(),
@@ -138,54 +80,12 @@ export function clientFactory<T>(
   const pkg = lookupPackage(grpcLoad(protoPath, includeDirs), packageName);
   for (const name of getServiceNames(pkg)) {
     prototype[`get${name}`] = function(this: Constructor) {
-      return createServiceClient(pkg[name], this.__args);
+      return createServiceClient(
+        (pkg[name] as any) as GrpcService<any>,
+        this.__args,
+      );
     };
   }
 
   return (Constructor as any) as ClientFactoryConstructor<T>;
-}
-
-function getServiceNames(pkg: any) {
-  return Object.keys(pkg).filter(name => pkg[name].service);
-}
-
-function createServiceClient(GrpcClient: any, args: any[]) {
-  const grpcClient = new GrpcClient(...args);
-  const rxClient: DynamicMethods = {};
-  for (const name of Object.keys(GrpcClient.prototype)) {
-    rxClient[name] = createClientMethod(grpcClient, name);
-  }
-  return rxClient;
-}
-
-function createClientMethod(grpcClient: DynamicMethods, name: string) {
-  return grpcClient[name].responseStream
-    ? createStreamingClientMethod(grpcClient, name)
-    : createUnaryClientMethod(grpcClient, name);
-}
-
-function createUnaryClientMethod(grpcClient: DynamicMethods, name: string) {
-  return function(...args: any[]) {
-    return new Observable(observer => {
-      grpcClient[name](...args, (error: any, data: any) => {
-        if (error) {
-          observer.error(error);
-        } else {
-          observer.next(data);
-        }
-        observer.complete();
-      });
-    });
-  };
-}
-
-function createStreamingClientMethod(grpcClient: DynamicMethods, name: string) {
-  return function(...args: any[]) {
-    return new Observable(observer => {
-      const call = grpcClient[name](...args);
-      call.on('data', (data: any) => observer.next(data));
-      call.on('error', (error: any) => observer.error(error));
-      call.on('end', () => observer.complete());
-    });
-  };
 }
