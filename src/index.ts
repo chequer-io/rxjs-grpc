@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-angle-bracket-type-assertion */
 import * as grpc from 'grpc';
 import { loadSync } from '@grpc/proto-loader';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 import { lookupPackage } from './utils';
 
