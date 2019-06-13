@@ -138,6 +138,11 @@ function transformJavaScriptSource(source: string, root: protobuf.Root) {
 function transformTypeScriptSource(source: string) {
   // Remove imports
   source = source.replace(/^import.*?$\n?/gm, '');
+  // eslint
+  source = `/* eslint-disable */\n${source}`;
+  // tslint
+  source = `/* tslint:disable */\n${source}`;
+
   // Add our imports
   source = `import { Observable } from 'rxjs-grpc';\n${source}`;
 
@@ -406,9 +411,7 @@ function buildServerBuilderSource(namespace: string, services: Services) {
         service => `
       /**
        * Adds a ${service.name} service implementation.
-       * @param {${service.reference}} impl ${
-          service.name
-        } service implementation
+       * @param {${service.reference}} impl ${service.name} service implementation
        * @returns {${namespace}.ServerBuilder}
        */
       ServerBuilder.prototype.add${service.name} = function() {};
