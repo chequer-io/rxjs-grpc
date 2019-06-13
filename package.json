@@ -17,7 +17,7 @@
     "start": "node js/cli",
     "build": "tsc",
     "lint": "tslint --project .",
-    "prepublishOnly": "npm run build",
+    "prepublish": "npm run build",
     "test": "npm-run-all --parallel test:*",
     "test:lint": "npm run lint",
     "test:format": "npm run format:check",
