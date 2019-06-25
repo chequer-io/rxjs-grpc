@@ -1,8 +1,4 @@
 /* eslint-disable @typescript-eslint/no-angle-bracket-type-assertion */
-import * as protoLoader from '@grpc/proto-loader';
-import { loadSync } from '@grpc/proto-loader';
-import * as rxjs from 'rxjs';
-import { Observable } from 'rxjs';
 import * as grpc from 'grpc';
 
 import {
@@ -16,7 +12,7 @@ import {
   lookupPackage,
 } from './utils';
 
-export { grpc, rxjs, Observable, ClientFactoryConstructor };
+export { grpc, ClientFactoryConstructor };
 
 export interface GenericServerBuilder<T> {
   start(address: string, credentials?: grpc.ServerCredentials): void;
