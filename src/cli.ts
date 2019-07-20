@@ -12,11 +12,15 @@ import * as tmp from 'tmp';
 const pbjsMain = promisify(pbjs.main);
 const pbtsMain = promisify(pbts.main);
 
-const createTempDir = promisify((callback: (error: any, result: tmp.SynchrounousResult) => any) => {
-  tmp.dir({ unsafeCleanup: true }, (error, name, removeCallback) => {
-    callback(error, { name, removeCallback, fd: -1 });
-  });
-});
+const createTempDir = promisify(
+  (
+    callback: (error: any, result: { name: string; removeCallback: () => void; fd: number }) => any,
+  ) => {
+    tmp.dir({ unsafeCleanup: true }, (error, name, removeCallback) => {
+      callback(error, { name, removeCallback, fd: -1 });
+    });
+  },
+);
 
 type NamedReference = {
   reference: string;
