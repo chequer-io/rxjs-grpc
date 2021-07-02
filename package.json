@@ -15,9 +15,9 @@
   },
   "scripts": {
     "start": "node js/cli",
-    "build": "tsc",
+    "compile-ts": "tsc",
     "lint": "tslint --project .",
-    "prepublish": "npm run build",
+    "prepublish": "npm run compile-ts",
     "test": "npm-run-all --parallel test:*",
     "test:lint": "npm run lint",
     "test:format": "npm run format:check",
