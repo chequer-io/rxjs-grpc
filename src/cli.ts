@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/prefer-interface */
+import * as K from 'ast-types/gen/kinds';
 import { promisify } from 'bluebird';
 import * as glob from 'glob';
 import * as jscodeshift from 'jscodeshift';
-import { ASTNode, ASTPath } from 'jscodeshift';
+import { ASTNode, ASTPath, Identifier } from 'jscodeshift';
 import { Collection } from 'jscodeshift/src/Collection';
 import * as minimist from 'minimist';
 import { fs } from 'mz';
@@ -29,16 +29,16 @@ type NamedReference = {
 };
 type Services = NamedReference[];
 
-export function bootstrap() {
+export function bootstrap(): void {
   main(process.argv.slice(2))
-    .then((code) => process.exit(code))
-    .catch((error) => {
+    .then(code => process.exit(code))
+    .catch(error => {
       console.error(error);
       process.exit(1);
     });
 }
 
-export async function main(args: string[]) {
+export async function main(args: string[]): Promise<number> {
   const { _: _protoFiles, out } = minimist(args, {
     alias: {
       out: 'o',
@@ -73,7 +73,7 @@ export async function main(args: string[]) {
   return 0;
 }
 
-export async function buildTypeScript(protoFiles: string[]) {
+export async function buildTypeScript(protoFiles: string[]): Promise<string> {
   const tempDir = await createTempDir();
   try {
     // Use pbjs to generate static JS code for the protobuf definitions
@@ -98,7 +98,7 @@ export async function buildTypeScript(protoFiles: string[]) {
   }
 }
 
-export async function buildTypeScriptFromSources(protoSources: string[]) {
+export async function buildTypeScriptFromSources(protoSources: string[]): Promise<string> {
   const tempDir = await createTempDir();
   try {
     const protoFiles = [];
@@ -113,7 +113,7 @@ export async function buildTypeScriptFromSources(protoSources: string[]) {
   }
 }
 
-function printUsage() {
+function printUsage(): void {
   console.log('Usage: rxjs-grpc -o [output] file.proto');
   console.log('');
   console.log('Options:');
@@ -121,7 +121,7 @@ function printUsage() {
   console.log('');
 }
 
-function transformJavaScriptSource(source: string, root: protobuf.Root) {
+function transformJavaScriptSource(source: string, root: protobuf.Root): string {
   const ast: Collection<jscodeshift.File> = jscodeshift(source);
   // Change constructors to interfaces and remove their parameters
   constructorsToInterfaces(ast);
@@ -132,12 +132,12 @@ function transformJavaScriptSource(source: string, root: protobuf.Root) {
   // Add the ClientFactory and ServerBuilder interfaces
   getNamespaceDeclarations(ast)
     .closestScope()
-    .forEach((path) => addFactoryAndBuild(jscodeshift(path.node)));
+    .forEach(path => addFactoryAndBuild(jscodeshift(path.node)));
   // Render AST
   return ast.toSource();
 }
 
-function transformTypeScriptSource(source: string) {
+function transformTypeScriptSource(source: string): string {
   // Remove imports
   source = source.replace(/^import.*?$\n?/gm, '');
   // Add our imports
@@ -162,15 +162,15 @@ function transformTypeScriptSource(source: string) {
   return source;
 }
 
-function addFactoryAndBuild(ast: Collection<ASTNode>) {
+function addFactoryAndBuild(ast: Collection<ASTNode>): void {
   const services = collectServices(ast);
 
   const declaration = getNamespaceDeclarations(ast).filter((path, index) => index === 0);
-  const namespace = getNamepaceName(declaration);
+  const namespace = getNamespaceName(declaration);
 
   const ownServices = services
-    .filter((service) => service.reference.startsWith(namespace))
-    .filter((service) => {
+    .filter(service => service.reference.startsWith(namespace))
+    .filter(service => {
       const relative = service.reference.substring(namespace.length + 1);
       return !relative.includes('.');
     });
@@ -179,51 +179,53 @@ function addFactoryAndBuild(ast: Collection<ASTNode>) {
   declaration.insertBefore(sourceToNodes(buildServerBuilderSource(namespace, ownServices)));
 }
 
-function collectServices(ast: Collection<ASTNode>) {
+function collectServices(ast: Collection<ASTNode>): Services {
   const services: Services = [];
   ast
     .find(jscodeshift.FunctionDeclaration)
-    .filter((path) => !!path.node.comments)
+    .filter(path => !!path.node.comments)
     // only service constructors have more than 1 parameters
-    .filter((path) => path.node.params.length > 1)
-    .forEach((path) => {
+    .filter(path => path.node.params.length > 1)
+    .forEach(path => {
       const reference = getReference(path);
       if (reference) {
-        const name = path.node.id.name;
+        const name = (path.node.id as Identifier).name;
         services.push({ reference: reference + '.' + name, name });
       }
     });
   return services;
 }
 
-function getReference(commentedNodePath: ASTPath<jscodeshift.FunctionDeclaration>) {
+function getReference(
+  commentedNodePath: ASTPath<jscodeshift.FunctionDeclaration>,
+): string | undefined {
   if (!commentedNodePath.node.comments) {
     return;
   }
   return commentedNodePath.node.comments
-    .map((comment) => /@memberof\s+([^\s]+)/.exec(comment.value))
-    .map((match) => (match ? match[1] : undefined))
-    .filter((match) => match)[0];
+    .map(comment => /@memberof\s+([^\s]+)/.exec(comment.value))
+    .map(match => (match ? match[1] : undefined))
+    .filter(match => match)[0];
 }
 
-function constructorsToInterfaces(ast: Collection<ASTNode>) {
-  ast.find(jscodeshift.FunctionDeclaration).forEach((path) => {
+function constructorsToInterfaces(ast: Collection<ASTNode>): void {
+  ast.find(jscodeshift.FunctionDeclaration).forEach(path => {
     if (!path.node.comments) {
       return;
     }
-    const interfaceComments = path.node.comments.filter((comment) =>
+    const interfaceComments = path.node.comments.filter(comment =>
       /@interface/.test(comment.value),
     );
     if (interfaceComments.length) {
       // Message type has an @interface declaration
       path.node.comments = interfaceComments;
-      path.node.comments.forEach((comment) => {
+      path.node.comments.forEach(comment => {
         comment.value = comment.value.replace(/^([\s\*]+@interface\s+)I/gm, '$1');
         comment.value = comment.value.replace(/^([\s\*]+@property\s+\{.*?\.)I([^.]+\})/gm, '$1$2');
       });
     } else {
       // Otherwise this is a service
-      path.node.comments.forEach((comment) => {
+      path.node.comments.forEach(comment => {
         comment.value = comment.value.replace(/@constructor/g, '@interface');
         comment.value = comment.value.replace(/^[\s\*]+@extends.*$/gm, '');
         comment.value = comment.value.replace(/^[\s\*]+@param.*$/gm, '');
@@ -234,15 +236,15 @@ function constructorsToInterfaces(ast: Collection<ASTNode>) {
   });
 }
 
-function cleanMethodSignatures(ast: Collection<ASTNode>) {
-  ast.find(jscodeshift.ExpressionStatement).forEach((path) => {
+function cleanMethodSignatures(ast: Collection<ASTNode>): void {
+  ast.find(jscodeshift.ExpressionStatement).forEach(path => {
     if (!path.node.comments) {
       return;
     }
     if (path.node.expression.type === 'AssignmentExpression') {
       const left = jscodeshift(path.node.expression.left).toSource();
       // do not remove enums
-      if (path.node.comments.some((comment) => /@enum/.test(comment.value))) {
+      if (path.node.comments.some(comment => /@enum/.test(comment.value))) {
         return;
       }
       // Remove static methods and converter methods, we export simple interfaces
@@ -250,7 +252,7 @@ function cleanMethodSignatures(ast: Collection<ASTNode>) {
         path.node.comments = [];
       }
     }
-    path.node.comments.forEach((comment) => {
+    path.node.comments.forEach(comment => {
       // Remove callback typedefs, as we use Observable instead of callbacks
       if (/@typedef\s+\w+Callback/.test(comment.value)) {
         comment.value = '';
@@ -261,7 +263,7 @@ function cleanMethodSignatures(ast: Collection<ASTNode>) {
       }
     });
     // Remove empty comments
-    path.node.comments = path.node.comments.filter((comment) => comment.value);
+    path.node.comments = path.node.comments.filter(comment => comment.value);
     jscodeshift(path).replaceWith(path.node);
   });
 
@@ -277,7 +279,7 @@ function cleanMethodSignatures(ast: Collection<ASTNode>) {
       return;
     }
     let changed = false;
-    path.node.comments.forEach((comment) => {
+    path.node.comments.forEach(comment => {
       const returnsPromiseRe = /(@returns\s+\{)Promise(<)/g;
       if (returnsPromiseRe.test(comment.value)) {
         changed = true;
@@ -291,18 +293,18 @@ function cleanMethodSignatures(ast: Collection<ASTNode>) {
       }
     });
     if (changed) {
-      path.node.comments = path.node.comments.filter((comment) => comment.value);
+      path.node.comments = path.node.comments.filter(comment => comment.value);
       jscodeshift(path).replaceWith(path.node);
     }
   }
 }
 
-function removeMembers(ast: Collection<ASTNode>, root: protobuf.Root) {
-  ast.find(jscodeshift.ExpressionStatement).forEach((path) => {
+function removeMembers(ast: Collection<ASTNode>, root: protobuf.Root): void {
+  ast.find(jscodeshift.ExpressionStatement).forEach(path => {
     if (!path.node.comments) {
       return;
     }
-    path.node.comments.forEach((comment) => {
+    path.node.comments.forEach(comment => {
       // Remove members of classes, as we use interfaces. But keep the oneofs,
       // as they are not part of the interfaces.
       if (/@member /.test(comment.value)) {
@@ -314,7 +316,7 @@ function removeMembers(ast: Collection<ASTNode>, root: protobuf.Root) {
 
         let oneofNames: string[] = [];
         comment.value.replace(/@memberof\s+([^\s]+)/g, (match, memberOf) => {
-          oneofNames = root.lookupType(memberOf).oneofsArray.map((oneof) => oneof.name);
+          oneofNames = root.lookupType(memberOf).oneofsArray.map(oneof => oneof.name);
           return match;
         });
 
@@ -324,16 +326,16 @@ function removeMembers(ast: Collection<ASTNode>, root: protobuf.Root) {
       }
     });
     // Remove empty comments
-    path.node.comments = path.node.comments.filter((comment) => comment.value);
+    path.node.comments = path.node.comments.filter(comment => comment.value);
     jscodeshift(path).replaceWith(path.node);
   });
 }
 
-function sourceToNodes(source: string) {
+function sourceToNodes(source: string): string {
   return jscodeshift(source).paths()[0].node.program.body;
 }
 
-function buildClientFactorySource(namespace: string, services: Services) {
+function buildClientFactorySource(namespace: string, services: Services): string {
   return `
     /**
      * Contains all the RPC service clients.
@@ -344,7 +346,7 @@ function buildClientFactorySource(namespace: string, services: Services) {
 
     ${services
       .map(
-        (service) => `
+        service => `
       /**
        * Returns the ${service.name} service client.
        * @returns {${service.reference}}
@@ -356,13 +358,13 @@ function buildClientFactorySource(namespace: string, services: Services) {
   `;
 }
 
-function getNamepaceName(declarations: Collection<jscodeshift.VariableDeclaration>) {
+function getNamespaceName(declarations: Collection<jscodeshift.VariableDeclaration>): string {
   let namespaceName = '';
   const node = declarations.paths()[0].node;
   if (!node.comments) {
     return '';
   }
-  node.comments.forEach((comment) => {
+  node.comments.forEach(comment => {
     comment.value.replace(/@exports\s+([^\s]+)/g, (match, reference) => {
       namespaceName = reference;
       return match;
@@ -383,7 +385,7 @@ function getNamepaceName(declarations: Collection<jscodeshift.VariableDeclaratio
   return namespaceName;
 }
 
-function buildServerBuilderSource(namespace: string, services: Services) {
+function buildServerBuilderSource(namespace: string, services: Services): string {
   return `
     /**
      * Builder for an RPC service server.
@@ -394,7 +396,7 @@ function buildServerBuilderSource(namespace: string, services: Services) {
 
     ${services
       .map(
-        (service) => `
+        service => `
       /**
        * Adds a ${service.name} service implementation.
        * @param {${service.reference}} impl ${service.name} service implementation
@@ -407,12 +409,14 @@ function buildServerBuilderSource(namespace: string, services: Services) {
   `;
 }
 
-function getNamespaceDeclarations(ast: Collection<ASTNode>) {
+function getNamespaceDeclarations(
+  ast: Collection<ASTNode>,
+): Collection<jscodeshift.VariableDeclaration> {
   return ast
     .find(jscodeshift.VariableDeclaration)
-    .filter((path) => !!path.node.comments)
-    .filter((path) =>
-      path.node.comments!.some((comment) => {
+    .filter(path => Boolean(path.node.comments))
+    .filter(path =>
+      (path.node.comments as K.CommentKind[]).some(comment => {
         return /@namespace/.test(comment.value);
       }),
     );
@@ -428,11 +432,11 @@ async function call(
   ext = 'js',
   flags: string[] = [],
   opts: Options = {},
-) {
+): Promise<string> {
   const out = `${tempDir}/${Math.random()}.${ext}`;
   const all = { ...opts, out } as typeof opts;
-  const args = Object.keys(all).map((name) => [`--${name}`, all[name]]);
-  await func([...flatten(args), ...flags.map((name) => `--${name}`), ...files]);
+  const args = Object.keys(all).map(name => [`--${name}`, all[name]]);
+  await func([...flatten(args), ...flags.map(name => `--${name}`), ...files]);
   return out;
 }
 

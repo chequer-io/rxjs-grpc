@@ -11,7 +11,7 @@ import {
   lookupPackage,
 } from './utils';
 
-export {grpc, ClientFactoryConstructor};
+export { grpc, ClientFactoryConstructor };
 
 export interface GenericServerBuilder<T> {
   start(address: string, credentials?: grpc.ServerCredentials): Promise<void>;
@@ -45,7 +45,7 @@ export function serverBuilder<T>(
 
   const pkg = lookupPackage(grpcLoad(protoPath, includeDirs), packageName);
   for (const name of getServiceNames(pkg)) {
-    builder[`add${name}`] = function (rxImpl: DynamicMethods) {
+    builder[`add${name}`] = function(rxImpl: DynamicMethods) {
       const serviceData = (pkg[name] as any) as GrpcService<any>;
       server.addService(serviceData.service, createService(serviceData, rxImpl));
       return this;
@@ -67,7 +67,7 @@ export function clientFactory<T>(protoPath: string, packageName: string, include
   const prototype: DynamicMethods = Constructor.prototype;
   const pkg = lookupPackage(grpcLoad(protoPath, includeDirs), packageName);
   for (const name of getServiceNames(pkg)) {
-    prototype[`get${name}`] = function (this: Constructor) {
+    prototype[`get${name}`] = function(this: Constructor) {
       return createServiceClient((pkg[name] as any) as GrpcService<any>, this.__args);
     };
   }
