@@ -35,7 +35,6 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.4.2",
     "@grpc/proto-loader": "^0.6.6",
-    "bluebird": "^3.7.2",
     "jscodeshift": "^0.13.0",
     "minimist": "^1.2.5",
     "mz": "^2.7.0",
@@ -43,7 +42,6 @@
     "tmp": "^0.2.1"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.5.36",
     "@types/glob": "^7.2.0",
     "@types/jasmine": "^3.10.1",
     "@types/jest": "^27.0.2",

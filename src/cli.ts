@@ -1,5 +1,4 @@
 import * as K from 'ast-types/gen/kinds';
-import { promisify } from 'bluebird';
 import * as glob from 'glob';
 import * as jscodeshift from 'jscodeshift';
 import { ASTNode, ASTPath, Identifier } from 'jscodeshift';
@@ -9,6 +8,7 @@ import { fs } from 'mz';
 import * as protobuf from 'protobufjs';
 import { pbjs, pbts } from 'protobufjs/cli';
 import * as tmp from 'tmp';
+import { promisify } from 'util';
 
 const pbjsMain = promisify(pbjs.main);
 const pbtsMain = promisify(pbts.main);
