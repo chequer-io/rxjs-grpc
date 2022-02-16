@@ -1,6 +1,6 @@
+import * as grpc from '@grpc/grpc-js';
+import { ServiceDefinition } from '@grpc/grpc-js';
 import { AnyDefinition } from '@grpc/proto-loader';
-import * as grpc from 'grpc';
-import { ServiceDefinition } from 'grpc';
 import { Observable, Subscribable } from 'rxjs';
 
 import {
@@ -38,7 +38,7 @@ type ServiceCodecs<Service> = { [MethodName in keyof Service]: MethodCodecs<Serv
 export type CodecsFactory<ClientFactory> = {
   [GetterName in keyof ClientFactory]: () => ServiceCodecs<
     LooseReturnType<ClientFactory[GetterName]>
-  >
+  >;
 };
 
 type RawServiceMethod<Method> = (
@@ -47,17 +47,21 @@ type RawServiceMethod<Method> = (
 ) => Observable<SerializedMessage<ResponseType<Method>>>;
 
 export type RawService<Service> = {
-  [MethodName in keyof Service]: RawServiceMethod<Service[MethodName]>
+  [MethodName in keyof Service]: RawServiceMethod<Service[MethodName]>;
 };
 
 export type RawClientFactory<ClientFactory> = {
-  [GetterName in keyof ClientFactory]: () => RawService<LooseReturnType<ClientFactory[GetterName]>>
+  [GetterName in keyof ClientFactory]: () => RawService<LooseReturnType<ClientFactory[GetterName]>>;
 };
 
 export function rawClientFactory<ClientFactory>(protoPath: string, packageName: string) {
   class Constructor {
-    readonly __args: [string, grpc.ChannelCredentials, any | undefined];
-    constructor(address: string, credentials?: grpc.ChannelCredentials, options: any = undefined) {
+    public readonly __args: [string, grpc.ChannelCredentials, any | undefined];
+    public constructor(
+      address: string,
+      credentials?: grpc.ChannelCredentials,
+      options: any = undefined,
+    ) {
       this.__args = [address, credentials || grpc.credentials.createInsecure(), options];
     }
   }
@@ -67,7 +71,7 @@ export function rawClientFactory<ClientFactory>(protoPath: string, packageName: 
   for (const name of getServiceNames(pkg)) {
     type GetterType = keyof ClientFactory;
     type ServiceType = LooseReturnType<ClientFactory[GetterType]>;
-    prototype[`get${name}`] = function(this: Constructor) {
+    prototype[`get${name}`] = function(_this: Constructor) {
       const grpcService = pkg[name] as GrpcService<ServiceType>;
       const definition = grpcService.service;
       typedKeys(definition).forEach(methodKey => {
@@ -79,7 +83,7 @@ export function rawClientFactory<ClientFactory>(protoPath: string, packageName: 
           return serialized;
         };
       });
-      return createServiceClient(grpcService, this.__args);
+      return createServiceClient(grpcService, _this.__args);
     };
   }
 
