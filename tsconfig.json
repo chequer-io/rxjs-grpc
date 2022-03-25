@@ -1,7 +1,13 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "lib": ["es2015", "es2016", "es2017", "es2018", "esnext"],
+    "lib": [
+      "es2015",
+      "es2016",
+      "es2017",
+      "es2018",
+      "esnext"
+    ],
     "module": "commonjs",
     "moduleResolution": "node",
     "noImplicitAny": true,
@@ -18,7 +24,11 @@
         "ignoreDefinitionFiles": true
       }
     ],
-    "typeRoots": ["./node_modules/@types"]
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

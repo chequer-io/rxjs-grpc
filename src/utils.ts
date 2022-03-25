@@ -7,7 +7,7 @@ import {
   handleUnaryCall,
   loadPackageDefinition,
   ServiceDefinition,
-} from '@grpc/grpc-js';
+} from 'grpc';
 import { Observable } from 'rxjs';
 
 export type ClientFactoryConstructor<T> = new (
