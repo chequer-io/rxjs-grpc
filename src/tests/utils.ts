@@ -32,7 +32,7 @@ export function compileInMemory(sources: Sources) {
 
 function createCompilerHost(sources: Sources, options: ts.CompilerOptions): ts.CompilerHost {
   const compilerHost = ts.createCompilerHost(options);
-  compilerHost.getSourceFile = function(fileName: string, version: ts.ScriptTarget) {
+  compilerHost.getSourceFile = function (fileName: string, version: ts.ScriptTarget) {
     let sourceText: string;
     if (fileName in sources) {
       sourceText = sources[fileName];
@@ -41,8 +41,8 @@ function createCompilerHost(sources: Sources, options: ts.CompilerOptions): ts.C
     }
     return ts.createSourceFile(fileName, sourceText, version);
   };
-  compilerHost.resolveModuleNames = function(moduleNames: string[], containingFile: string) {
-    return moduleNames.map(moduleName => {
+  compilerHost.resolveModuleNames = function (moduleNames: string[], containingFile: string) {
+    return moduleNames.map((moduleName) => {
       if (moduleName === 'rxjs-grpc') {
         return {
           resolvedFileName: path.join(__dirname, '..', 'index.d.ts'),
@@ -62,7 +62,7 @@ function createCompilerHost(sources: Sources, options: ts.CompilerOptions): ts.C
 
 function extractErrors(emitResult: ts.EmitResult, program: ts.Program) {
   const allDiagnostics = ts.getPreEmitDiagnostics(program).concat(emitResult.diagnostics);
-  return allDiagnostics.map(diagnostic => {
+  return allDiagnostics.map((diagnostic) => {
     let prefix = '';
     if (diagnostic.file) {
       const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);

@@ -31,8 +31,8 @@ type Services = NamedReference[];
 
 export function bootstrap(): void {
   main(process.argv.slice(2))
-    .then(code => process.exit(code))
-    .catch(error => {
+    .then((code) => process.exit(code))
+    .catch((error) => {
       console.error(error);
       process.exit(1);
     });
@@ -132,7 +132,7 @@ function transformJavaScriptSource(source: string, root: protobuf.Root): string 
   // Add the ClientFactory and ServerBuilder interfaces
   getNamespaceDeclarations(ast)
     .closestScope()
-    .forEach(path => addFactoryAndBuild(jscodeshift(path.node)));
+    .forEach((path) => addFactoryAndBuild(jscodeshift(path.node)));
   // Render AST
   return ast.toSource();
 }
@@ -169,8 +169,8 @@ function addFactoryAndBuild(ast: Collection<ASTNode>): void {
   const namespace = getNamespaceName(declaration);
 
   const ownServices = services
-    .filter(service => service.reference.startsWith(namespace))
-    .filter(service => {
+    .filter((service) => service.reference.startsWith(namespace))
+    .filter((service) => {
       const relative = service.reference.substring(namespace.length + 1);
       return !relative.includes('.');
     });
@@ -183,10 +183,10 @@ function collectServices(ast: Collection<ASTNode>): Services {
   const services: Services = [];
   ast
     .find(jscodeshift.FunctionDeclaration)
-    .filter(path => !!path.node.comments)
+    .filter((path) => !!path.node.comments)
     // only service constructors have more than 1 parameters
-    .filter(path => path.node.params.length > 1)
-    .forEach(path => {
+    .filter((path) => path.node.params.length > 1)
+    .forEach((path) => {
       const reference = getReference(path);
       if (reference) {
         const name = (path.node.id as Identifier).name;
@@ -203,29 +203,29 @@ function getReference(
     return;
   }
   return commentedNodePath.node.comments
-    .map(comment => /@memberof\s+([^\s]+)/.exec(comment.value))
-    .map(match => (match ? match[1] : undefined))
-    .filter(match => match)[0];
+    .map((comment) => /@memberof\s+([^\s]+)/.exec(comment.value))
+    .map((match) => (match ? match[1] : undefined))
+    .filter((match) => match)[0];
 }
 
 function constructorsToInterfaces(ast: Collection<ASTNode>): void {
-  ast.find(jscodeshift.FunctionDeclaration).forEach(path => {
+  ast.find(jscodeshift.FunctionDeclaration).forEach((path) => {
     if (!path.node.comments) {
       return;
     }
-    const interfaceComments = path.node.comments.filter(comment =>
+    const interfaceComments = path.node.comments.filter((comment) =>
       /@interface/.test(comment.value),
     );
     if (interfaceComments.length) {
       // Message type has an @interface declaration
       path.node.comments = interfaceComments;
-      path.node.comments.forEach(comment => {
+      path.node.comments.forEach((comment) => {
         comment.value = comment.value.replace(/^([\s\*]+@interface\s+)I/gm, '$1');
         comment.value = comment.value.replace(/^([\s\*]+@property\s+\{.*?\.)I([^.]+\})/gm, '$1$2');
       });
     } else {
       // Otherwise this is a service
-      path.node.comments.forEach(comment => {
+      path.node.comments.forEach((comment) => {
         comment.value = comment.value.replace(/@constructor/g, '@interface');
         comment.value = comment.value.replace(/^[\s\*]+@extends.*$/gm, '');
         comment.value = comment.value.replace(/^[\s\*]+@param.*$/gm, '');
@@ -237,14 +237,14 @@ function constructorsToInterfaces(ast: Collection<ASTNode>): void {
 }
 
 function cleanMethodSignatures(ast: Collection<ASTNode>): void {
-  ast.find(jscodeshift.ExpressionStatement).forEach(path => {
+  ast.find(jscodeshift.ExpressionStatement).forEach((path) => {
     if (!path.node.comments) {
       return;
     }
     if (path.node.expression.type === 'AssignmentExpression') {
       const left = jscodeshift(path.node.expression.left).toSource();
       // do not remove enums
-      if (path.node.comments.some(comment => /@enum/.test(comment.value))) {
+      if (path.node.comments.some((comment) => /@enum/.test(comment.value))) {
         return;
       }
       // Remove static methods and converter methods, we export simple interfaces
@@ -252,7 +252,7 @@ function cleanMethodSignatures(ast: Collection<ASTNode>): void {
         path.node.comments = [];
       }
     }
-    path.node.comments.forEach(comment => {
+    path.node.comments.forEach((comment) => {
       // Remove callback typedefs, as we use Observable instead of callbacks
       if (/@typedef\s+\w+Callback/.test(comment.value)) {
         comment.value = '';
@@ -263,7 +263,7 @@ function cleanMethodSignatures(ast: Collection<ASTNode>): void {
       }
     });
     // Remove empty comments
-    path.node.comments = path.node.comments.filter(comment => comment.value);
+    path.node.comments = path.node.comments.filter((comment) => comment.value);
     jscodeshift(path).replaceWith(path.node);
   });
 
@@ -279,7 +279,7 @@ function cleanMethodSignatures(ast: Collection<ASTNode>): void {
       return;
     }
     let changed = false;
-    path.node.comments.forEach(comment => {
+    path.node.comments.forEach((comment) => {
       const returnsPromiseRe = /(@returns\s+\{)Promise(<)/g;
       if (returnsPromiseRe.test(comment.value)) {
         changed = true;
@@ -293,18 +293,18 @@ function cleanMethodSignatures(ast: Collection<ASTNode>): void {
       }
     });
     if (changed) {
-      path.node.comments = path.node.comments.filter(comment => comment.value);
+      path.node.comments = path.node.comments.filter((comment) => comment.value);
       jscodeshift(path).replaceWith(path.node);
     }
   }
 }
 
 function removeMembers(ast: Collection<ASTNode>, root: protobuf.Root): void {
-  ast.find(jscodeshift.ExpressionStatement).forEach(path => {
+  ast.find(jscodeshift.ExpressionStatement).forEach((path) => {
     if (!path.node.comments) {
       return;
     }
-    path.node.comments.forEach(comment => {
+    path.node.comments.forEach((comment) => {
       // Remove members of classes, as we use interfaces. But keep the oneofs,
       // as they are not part of the interfaces.
       if (/@member /.test(comment.value)) {
@@ -316,7 +316,7 @@ function removeMembers(ast: Collection<ASTNode>, root: protobuf.Root): void {
 
         let oneofNames: string[] = [];
         comment.value.replace(/@memberof\s+([^\s]+)/g, (match, memberOf) => {
-          oneofNames = root.lookupType(memberOf).oneofsArray.map(oneof => oneof.name);
+          oneofNames = root.lookupType(memberOf).oneofsArray.map((oneof) => oneof.name);
           return match;
         });
 
@@ -326,7 +326,7 @@ function removeMembers(ast: Collection<ASTNode>, root: protobuf.Root): void {
       }
     });
     // Remove empty comments
-    path.node.comments = path.node.comments.filter(comment => comment.value);
+    path.node.comments = path.node.comments.filter((comment) => comment.value);
     jscodeshift(path).replaceWith(path.node);
   });
 }
@@ -346,7 +346,7 @@ function buildClientFactorySource(namespace: string, services: Services): string
 
     ${services
       .map(
-        service => `
+        (service) => `
       /**
        * Returns the ${service.name} service client.
        * @returns {${service.reference}}
@@ -364,7 +364,7 @@ function getNamespaceName(declarations: Collection<jscodeshift.VariableDeclarati
   if (!node.comments) {
     return '';
   }
-  node.comments.forEach(comment => {
+  node.comments.forEach((comment) => {
     comment.value.replace(/@exports\s+([^\s]+)/g, (match, reference) => {
       namespaceName = reference;
       return match;
@@ -396,7 +396,7 @@ function buildServerBuilderSource(namespace: string, services: Services): string
 
     ${services
       .map(
-        service => `
+        (service) => `
       /**
        * Adds a ${service.name} service implementation.
        * @param {${service.reference}} impl ${service.name} service implementation
@@ -414,9 +414,9 @@ function getNamespaceDeclarations(
 ): Collection<jscodeshift.VariableDeclaration> {
   return ast
     .find(jscodeshift.VariableDeclaration)
-    .filter(path => Boolean(path.node.comments))
-    .filter(path =>
-      (path.node.comments as K.CommentKind[]).some(comment => {
+    .filter((path) => Boolean(path.node.comments))
+    .filter((path) =>
+      (path.node.comments as K.CommentKind[]).some((comment) => {
         return /@namespace/.test(comment.value);
       }),
     );
@@ -435,8 +435,8 @@ async function call(
 ): Promise<string> {
   const out = `${tempDir}/${Math.random()}.${ext}`;
   const all = { ...opts, out } as typeof opts;
-  const args = Object.keys(all).map(name => [`--${name}`, all[name]]);
-  await func([...flatten(args), ...flags.map(name => `--${name}`), ...files]);
+  const args = Object.keys(all).map((name) => [`--${name}`, all[name]]);
+  await func([...flatten(args), ...flags.map((name) => `--${name}`), ...files]);
   return out;
 }
 
