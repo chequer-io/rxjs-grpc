@@ -1,6 +1,6 @@
+import * as grpc from '@grpc/grpc-js';
+import { ServiceDefinition } from '@grpc/grpc-js';
 import { AnyDefinition } from '@grpc/proto-loader';
-import * as grpc from 'grpc';
-import { ServiceDefinition } from 'grpc';
 import { Observable, Subscribable } from 'rxjs';
 
 import {

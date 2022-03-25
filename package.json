@@ -33,8 +33,8 @@
     "setupTestFrameworkScriptFile": "./setup-jest"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.4.2",
     "@grpc/proto-loader": "^0.6.6",
-    "grpc": "^1.24.4",
     "jscodeshift": "^0.13.0",
     "minimist": "^1.2.5",
     "mz": "^2.7.0",
