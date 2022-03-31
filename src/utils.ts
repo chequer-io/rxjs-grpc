@@ -1,4 +1,3 @@
-import * as protoLoader from '@grpc/proto-loader';
 import {
   ChannelCredentials,
   Client,
@@ -8,6 +7,7 @@ import {
   loadPackageDefinition,
   ServiceDefinition,
 } from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
 import { Observable } from 'rxjs';
 
 export type ClientFactoryConstructor<T> = new (
@@ -64,10 +64,13 @@ function createMethod(rxImpl: DynamicMethods, name: string, serviceMethods: Dyna
 }
 
 function createUnaryMethod(rxImpl: DynamicMethods, name: string): handleUnaryCall<any, any> {
-  return function(call, callback) {
+  return function (call, callback) {
     try {
       const response: Observable<any> = rxImpl[name](call.request, call.metadata);
-      response.subscribe(data => callback(null, data), error => callback(error, null));
+      response.subscribe(
+        (data) => callback(null, data),
+        (error) => callback(error, null),
+      );
     } catch (error) {
       callback(error, null);
     }
@@ -78,10 +81,10 @@ function createStreamingMethod(
   rxImpl: DynamicMethods,
   name: string,
 ): handleServerStreamingCall<any, any> {
-  return async function(call) {
+  return async function (call) {
     try {
       const response: Observable<any> = rxImpl[name](call.request, call.metadata);
-      await response.forEach(data => call.write(data));
+      await response.forEach((data) => call.write(data));
     } catch (error) {
       call.emit('error', error);
     }
@@ -90,7 +93,7 @@ function createStreamingMethod(
 }
 
 export function getServiceNames(pkg: GrpcObject) {
-  return Object.keys(pkg).filter(name => (pkg[name] as GrpcService<any>).service);
+  return Object.keys(pkg).filter((name) => (pkg[name] as GrpcService<any>).service);
 }
 
 export function createServiceClient(
@@ -112,8 +115,8 @@ function createClientMethod(grpcClient: DynamicMethods, name: string) {
 }
 
 function createUnaryClientMethod(grpcClient: DynamicMethods, name: string) {
-  return function(...args: any[]) {
-    return new Observable(observer => {
+  return function (...args: any[]) {
+    return new Observable((observer) => {
       grpcClient[name](...args, (error: any, data: any) => {
         if (error) {
           observer.error(error);
@@ -127,8 +130,8 @@ function createUnaryClientMethod(grpcClient: DynamicMethods, name: string) {
 }
 
 function createStreamingClientMethod(grpcClient: DynamicMethods, name: string) {
-  return function(...args: any[]) {
-    return new Observable(observer => {
+  return function (...args: any[]) {
+    return new Observable((observer) => {
       const call = grpcClient[name](...args);
       call.on('data', (data: any) => observer.next(data));
       call.on('error', (error: any) => observer.error(error));

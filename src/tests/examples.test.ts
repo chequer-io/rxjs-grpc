@@ -17,7 +17,7 @@ describe('compile/examples', () => {
         const namespaces = await cli.buildTypeScript(
           glob
             .sync('*.proto', { cwd: EXAMPLE_FOLDER })
-            .map(name => path.join(EXAMPLE_FOLDER, name)),
+            .map((name) => path.join(EXAMPLE_FOLDER, name)),
         );
         expect(namespaces).toBeTruthy();
 

@@ -71,10 +71,10 @@ export function rawClientFactory<ClientFactory>(protoPath: string, packageName: 
   for (const name of getServiceNames(pkg)) {
     type GetterType = keyof ClientFactory;
     type ServiceType = LooseReturnType<ClientFactory[GetterType]>;
-    prototype[`get${name}`] = function(_this: Constructor) {
+    prototype[`get${name}`] = function (_this: Constructor) {
       const grpcService = pkg[name] as GrpcService<ServiceType>;
       const definition = grpcService.service;
-      typedKeys(definition).forEach(methodKey => {
+      typedKeys(definition).forEach((methodKey) => {
         const methodDefinition = definition[methodKey];
         methodDefinition.requestSerialize = (alreadySerialized: SerializedMessage<any>) => {
           return alreadySerialized;
@@ -87,7 +87,7 @@ export function rawClientFactory<ClientFactory>(protoPath: string, packageName: 
     };
   }
 
-  return (Constructor as any) as ClientFactoryConstructor<RawClientFactory<ClientFactory>>;
+  return Constructor as any as ClientFactoryConstructor<RawClientFactory<ClientFactory>>;
 }
 
 export function buildCodecsFactory<ClientFactory>(
@@ -110,14 +110,10 @@ function buildServiceCodecs<Service>(
   definition: ServiceDefinition<Service>,
 ): ServiceCodecs<Service> {
   const codecs = {} as { [key in keyof Service]: MethodCodecs<Service[key]> };
-  typedKeys(definition).forEach(methodKey => {
-    getMethodNames(definition, methodKey).forEach(methodName => {
-      const {
-        requestSerialize,
-        requestDeserialize,
-        responseSerialize,
-        responseDeserialize,
-      } = definition[methodKey];
+  typedKeys(definition).forEach((methodKey) => {
+    getMethodNames(definition, methodKey).forEach((methodName) => {
+      const { requestSerialize, requestDeserialize, responseSerialize, responseDeserialize } =
+        definition[methodKey];
       codecs[methodName] = {
         requestSerialize,
         requestDeserialize,
@@ -139,8 +135,8 @@ function loadServices<ServiceType>(protoPath: string, packageName: string) {
   const prefix = packageName + '.';
   const pkg: Record<string, ServiceDefinition<ServiceType>> = {};
   Object.keys(packageDefinition)
-    .filter(key => key.startsWith(prefix))
-    .forEach(key => {
+    .filter((key) => key.startsWith(prefix))
+    .forEach((key) => {
       const entry = packageDefinition[key];
       if (isServiceDefinition<ServiceType>(entry)) {
         pkg[key.substring(prefix.length)] = entry;
