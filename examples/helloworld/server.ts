@@ -1,6 +1,6 @@
 import { of, timer } from 'rxjs';
 import { mapTo, take } from 'rxjs/operators';
-import { serverBuilder } from 'qp-rxjs-grpc;
+import { serverBuilder } from 'qp-rxjs-grpc';
 
 import { helloworld } from './grpc-namespaces';
 
