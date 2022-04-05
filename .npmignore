@@ -32,4 +32,5 @@ Thumbs.db
 /src/tests
 /.editorconfig
 /.prettierrc.json
-/*.js
+wallaby.js
+setup-jest.js
