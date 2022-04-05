@@ -1,4 +1,4 @@
-import { clientFactory } from 'qp-rxjs-grpc;
+import { clientFactory } from 'qp-rxjs-grpc';
 
 import { helloworld } from './grpc-namespaces';
 
