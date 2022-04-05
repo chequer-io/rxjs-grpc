@@ -10,9 +10,7 @@
     "type": "git",
     "url": "https://github.com/kondi/rxjs-grpc.git"
   },
-  "bin": {
-    "rxjs-grpc": "./bin/rxjs-grpc"
-  },
+  "bin": "./bin/rxjs-grpc",
   "scripts": {
     "start": "node js/cli",
     "compile-ts": "tsc",
