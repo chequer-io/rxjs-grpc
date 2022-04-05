@@ -32,7 +32,7 @@ describe('full api test', () => {
       'grpc-namespaces.ts': namespaces,
       'test.ts': `
         import { of } from 'rxjs';
-        import { serverBuilder } from 'rxjs-grpc';
+        import { serverBuilder } from 'qp-rxjs-grpc;
 
         import { test } from './grpc-namespaces';
 
@@ -65,7 +65,7 @@ describe('full api test', () => {
     const result = compileInMemory({
       'grpc-namespaces.ts': namespaces,
       'test.ts': `
-        import { clientFactory } from 'rxjs-grpc';
+        import { clientFactory } from 'qp-rxjs-grpc;
 
         import { test } from './grpc-namespaces';
 

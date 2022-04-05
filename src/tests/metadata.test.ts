@@ -27,7 +27,7 @@ describe('metadata test', () => {
       'grpc-namespaces.ts': namespaces,
       'test.ts': `
         import { Metadata } from '@grpc/grpc-js';
-        import { clientFactory } from 'rxjs-grpc';
+        import { clientFactory } from 'qp-rxjs-grpc;
 
         import { test } from './grpc-namespaces';
 
@@ -48,7 +48,7 @@ describe('metadata test', () => {
       'grpc-namespaces.ts': namespaces,
       'test.ts': `
         import { Metadata } from '@grpc/grpc-js';
-        import { clientFactory } from 'rxjs-grpc';
+        import { clientFactory } from 'qp-rxjs-grpc;
 
         import { test } from './grpc-namespaces';
 
@@ -69,7 +69,7 @@ describe('metadata test', () => {
       'grpc-namespaces.ts': namespaces,
       'test.ts': `
         import { of } from 'rxjs';
-        import { serverBuilder } from 'rxjs-grpc';
+        import { serverBuilder } from 'qp-rxjs-grpc;
 
         import { test } from './grpc-namespaces';
 

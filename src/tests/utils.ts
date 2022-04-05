@@ -43,7 +43,7 @@ function createCompilerHost(sources: Sources, options: ts.CompilerOptions): ts.C
   };
   compilerHost.resolveModuleNames = function (moduleNames: string[], containingFile: string) {
     return moduleNames.map((moduleName) => {
-      if (moduleName === 'rxjs-grpc') {
+      if (moduleName === 'qp-rxjs-grpc) {
         return {
           resolvedFileName: path.join(__dirname, '..', 'index.d.ts'),
         };

@@ -41,7 +41,7 @@ Implement your typesafe server returning `Observable<sample.HelloReply>`:
 
 ```typescript
 import { of } from 'rxjs';
-import { serverBuilder } from 'rxjs-grpc';
+import { serverBuilder } from 'qp-rxjs-grpc;
 import { sample } from './grpc-namespaces';
 
 // Pass the path of proto file and the name of namespace
@@ -61,7 +61,7 @@ server.start('0.0.0.0:50051');
 Call it from a client:
 
 ```typescript
-import { clientFactory } from 'rxjs-grpc';
+import { clientFactory } from 'qp-rxjs-grpc;
 import { sample } from './grpc-namespaces';
 
 // Pass the path of proto file and the name of namespace
