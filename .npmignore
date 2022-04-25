@@ -34,3 +34,9 @@ Thumbs.db
 /.prettierrc.json
 wallaby.js
 setup-jest.js
+
+.travis.yml
+src
+CHANGELOG.md
+tslint.json
+tsconfig.json
