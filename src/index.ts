@@ -14,7 +14,7 @@ import {
 export { grpc, ClientFactoryConstructor };
 
 export interface GenericServerBuilder<_T> {
-  start(address: string, credentials?: grpc.ServerCredentials): Promise<void>;
+  start(address: string, credentials?: grpc.ServerCredentials): Promise<number>;
 
   forceShutdown(): void;
 }
@@ -31,13 +31,13 @@ export function serverBuilder<T>(
         server.bindAsync(
           address,
           credentials || grpc.ServerCredentials.createInsecure(),
-          (error) => {
+          (error, port) => {
             if (error) {
               reject(error);
               return;
             }
             server.start();
-            resolve();
+            resolve(port);
           },
         );
       });
