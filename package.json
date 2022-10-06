@@ -2,7 +2,7 @@
   "main": "js/index",
   "typings": "js/index",
   "name": "qp-rxjs-grpc",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "description": "Typesafe gRPC with RxJS in TypeScript",
   "license": "MIT",
   "keywords": [],
