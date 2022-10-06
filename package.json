@@ -37,6 +37,7 @@
     "minimist": "^1.2.5",
     "mz": "^2.7.0",
     "protobufjs": "^7.1.2",
+    "protobufjs-cli": "^1.0.2",
     "tmp": "^0.2.1"
   },
   "devDependencies": {

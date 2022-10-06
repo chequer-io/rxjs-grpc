@@ -6,7 +6,7 @@ import { Collection } from 'jscodeshift/src/Collection';
 import * as minimist from 'minimist';
 import { fs } from 'mz';
 import * as protobuf from 'protobufjs';
-import { pbjs, pbts } from 'protobufjs/cli';
+import { pbjs, pbts } from 'protobufjs-cli';
 import * as tmp from 'tmp';
 import { promisify } from 'util';
 
